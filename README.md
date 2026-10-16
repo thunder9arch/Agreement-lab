@@ -48,4 +48,4 @@ The judge verdict is a rule of thumb: the judge passes when its κ against the h
 
 ## License
 
-MIT, see `LICENSE`. Replace `YOUR NAME` in the license before publishing.
+MIT, see `LICENSE`. Replace  in the license before publishing.
