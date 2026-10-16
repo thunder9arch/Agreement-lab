@@ -27,6 +27,7 @@ Invents a citation,bad,bad,good
 
 A column whose name contains `judge`, `llm`, `gpt`, `claude`, `model` or starts with `ai` is preselected as the judge; change it in the top bar.
 
+<img width="1035" height="561" alt="Screenshot 2026-10-16 133655" src="https://github.com/user-attachments/assets/c089e7b1-905b-4e23-8fe3-0f843ee0a83c" />
 ## Reading the numbers
 
 | α / κ | Meaning |
