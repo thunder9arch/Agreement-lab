@@ -40,12 +40,8 @@ A column whose name contains `judge`, `llm`, `gpt`, `claude`, `model` or starts 
 
 The judge verdict is a rule of thumb: the judge passes when its κ against the human majority is within 0.05 of the human–human mean κ and at least 0.6. κ and α fall when one label dominates even if raw agreement is high, so read them alongside % agreement and the disagreement list. Items where humans tie are excluded from majority-based figures.
 
-## Deploy on GitHub Pages
 
-1. Push this folder to a repository.
-2. **Settings → Pages → Build and deployment → Deploy from a branch**, choose `main` and `/ (root)`.
-3. The app is served at `https://<user>.github.io/<repo>/`.
 
 ## License
 
-MIT, see `LICENSE`. Replace  in the license before publishing.
+MIT
