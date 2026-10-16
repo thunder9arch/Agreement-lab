@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agreement Lab</title>
+<style>
+:root{--bg:#faf9f7;--fg:#1f1e1c;--mut:#6b6862;--card:#fff;--bd:#e3e0da;--ac:#c4562d;--ok:#2e8b57;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1917;--fg:#ece9e3;--mut:#9b978f;--card:#242321;--bd:#3a3834;--ac:#e8845c;--ok:#5fc08a}}
+:root[data-theme="dark"]{--bg:#1a1917;--fg:#ece9e3;--mut:#9b978f;--card:#242321;--bd:#3a3834;--ac:#e8845c;--ok:#5fc08a}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--card);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--card);border-bottom:1px solid var(--bd)}
+.bar{max-width:1040px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.logo{font-weight:700;font-size:17px;margin-right:auto}.logo span{color:var(--ac)}
+nav{max-width:1040px;margin:0 auto;padding:0 12px;display:flex;overflow-x:auto}
+nav button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 12px;color:var(--mut);white-space:nowrap}
+nav button.on{color:var(--fg);border-color:var(--ac);font-weight:600}
+main{max-width:1040px;margin:0 auto;padding:18px 16px 60px}
+h2{font-size:16px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+textarea{width:100%;min-height:220px;font:13px/1.4 ui-monospace,Menlo,monospace;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:10px;resize:vertical}
+textarea.drag{border-color:var(--ac)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+button,select,input[type=search]{font:inherit;padding:6px 11px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--fg);cursor:pointer}
+input[type=search]{cursor:text}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+label{color:var(--mut);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.st{border:1px solid var(--bd);border-radius:10px;padding:12px}
+.st b{display:block;font-size:26px;line-height:1.15}.st span{color:var(--mut);font-size:12px}.st i{display:block;font-style:normal;font-size:12px}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{border:1px solid var(--bd);padding:5px 8px;text-align:center}
+th{background:var(--bg);font-weight:600}td.l,th.l{text-align:left}
+.dis{background:rgba(196,86,45,.2)}.out{outline:2px solid var(--ac);outline-offset:-2px}
+.note{color:var(--mut);font-size:13px;margin:8px 0 0}.err{color:#c0392b}
+.bar1{display:flex;height:16px;border-radius:5px;overflow:hidden;background:var(--bd)}
+.bl{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;margin:5px 0;font-size:13px}
+.lg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;margin-top:6px}.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+#toast.on{opacity:1}
+</style></head><body>
+<header>
+<div class="bar"><div class="logo">Agreement <span>Lab</span></div>
+<label>Judge <select id="jg"><option value="">none</option></select></label>
+<label>Metric <select id="met"><option value="nominal">nominal</option><option value="ordinal">ordinal</option><option value="interval">interval</option></select></label>
+<button id="cp">Copy summary</button><button id="th" title="Toggle theme">◐</button></div>
+<nav id="nav"></nav></header>
+<main id="m"></main><div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const EX=`item\thuman_A\thuman_B\thuman_C\tllm_judge
+Reply is polite and accurate\tgood\tgood\tgood\tgood
+Misses the second question\tgood\tbad\tgood\tgood
+Invents a citation\tbad\tbad\tbad\tgood
+Refuses a harmless request\tbad\tbad\tbad\tbad
+Correct but rambling\tgood\tgood\tbad\tgood
+Partly answers, hedges a lot\tunsure\tbad\tunsure\tbad
+Clear step-by-step fix\tgood\tgood\tgood\tgood
+Wrong date given\tbad\tgood\tbad\tbad
+Concise and correct\tgood\tgood\tgood\tgood
+Confident but unsupported\tbad\tbad\tunsure\tgood
+Good summary\tgood\tgood\tgood\tgood
+Off-topic answer\tbad\tbad\tbad\tbad
+Slightly rude tone\tgood\tbad\tbad\tgood
+Matches the format asked\tgood\tgood\tgood\tgood`;
+const TABS=[['data','Data'],['overview','Overview'],['raters','Raters'],['items','Items'],['judge','Judge check']];
+let S=null,C=null,tab='data',flt='dis',q='',jset=false,raw=EX;
+try{const s=localStorage.getItem('agr_raw');if(s)raw=s}catch(e){}
+const MISS=/^(|na|n\/a|nan|null|none|-)$/i;
+function parse(t){
+ t=t.trim();if(!t)throw"Paste or upload some data first.";
+ const d=t.includes('\t')?'\t':',';
+ const rows=t.split(/\r?\n/).filter(r=>r.trim()).map(r=>r.split(d).map(c=>c.trim().replace(/^"|"$/g,'')));
+ const h=rows[0],idc=/^(item|id|text|example|prompt)$/i.test(h[0])?0:-1,names=h.slice(idc+1);
+ if(names.length<2)throw"Need at least two rater columns.";
+ const items=rows.slice(1).map((r,i)=>({id:idc>=0?r[0]:String(i+1),v:names.map((_,j)=>{const x=(r[j+idc+1]||'').trim();return MISS.test(x)?null:x})}));
+ if(items.length<2)throw"Need at least two items.";
+ return{names,items};
+}
+function cohen(a,b){
+ const p=S.items.filter(i=>i.v[a]!==null&&i.v[b]!==null),n=p.length;if(!n)return{k:NaN,po:NaN,n:0};
+ const ma={},mb={};let ag=0;
+ p.forEach(i=>{const x=i.v[a],y=i.v[b];ma[x]=(ma[x]||0)+1;mb[y]=(mb[y]||0)+1;if(x===y)ag++});
+ const po=ag/n;let pe=0;for(const c in ma)pe+=(ma[c]/n)*((mb[c]||0)/n);
+ return{k:pe===1?(po===1?1:NaN):(po-pe)/(1-pe),po,n};
+}
+function alphaOf(items,m){
+ const cats=C.cats,ix=C.ix,o=cats.map(()=>cats.map(()=>0));
+ items.forEach(it=>{const vs=it.v.filter(x=>x!==null),mu=vs.length;if(mu<2)return;
+  for(let i=0;i<mu;i++)for(let j=0;j<mu;j++)if(i!==j)o[ix[vs[i]]][ix[vs[j]]]+=1/(mu-1)});
+ const nc=o.map(r=>r.reduce((a,b)=>a+b,0)),n=nc.reduce((a,b)=>a+b,0);if(n<=1)return NaN;
+ const dl=(c,k)=>{if(c===k)return 0;if(m==='nominal')return 1;
+  if(m==='interval')return(+cats[c]-+cats[k])**2;
+  let s=0;for(let g=Math.min(c,k);g<=Math.max(c,k);g++)s+=nc[g];return(s-(nc[c]+nc[k])/2)**2};
+ let Do=0,De=0;
+ for(let c=0;c<cats.length;c++)for(let k=0;k<cats.length;k++){const d=dl(c,k);Do+=o[c][k]*d;De+=nc[c]*nc[k]*d}
+ Do/=n;De/=n*(n-1);return De===0?1:1-Do/De;
+}
+function major(vals){const c={};vals.forEach(v=>{if(v!==null)c[v]=(c[v]||0)+1});const e=Object.entries(c).sort((a,b)=>b[1]-a[1]);return!e.length||(e[1]&&e[1][1]===e[0][1])?null:e[0][0]}
+const mean=x=>x.length?x.reduce((a,b)=>a+b,0)/x.length:NaN;
+const lk=k=>isNaN(k)?'n/a':k<0?'worse than chance':k<.2?'slight':k<.4?'fair':k<.6?'moderate':k<.8?'substantial':'almost perfect';
+const f=x=>isNaN(x)?'n/a':x.toFixed(3);
+const pc=x=>isNaN(x)?'n/a':(x*100).toFixed(0)+'%';
+const heat=k=>isNaN(k)?'':`background:hsla(${Math.max(0,Math.min(1,k))*120},60%,45%,.28)`;
+const col=i=>`hsl(${(i*67+15)%360},55%,52%)`;
+function compute(){
+ const all=[...new Set(S.items.flatMap(i=>i.v).filter(x=>x!==null))];
+ const num=all.every(x=>!isNaN(parseFloat(x)));
+ const cats=num?all.sort((a,b)=>a-b):all.sort(),ix={};cats.forEach((c,i)=>ix[c]=i);
+ let m=$('met').value,note='';
+ if(m==='interval'&&!num){m='nominal';note='Labels are not numeric, so interval fell back to nominal. '}
+ if(m==='ordinal'&&!num)note='Non-numeric labels are ordered alphabetically for ordinal. ';
+ C={cats,ix,m,note};
+ C.a=alphaOf(S.items,m);
+ const bs=[];for(let b=0;b<400;b++){const smp=S.items.map(()=>S.items[Math.random()*S.items.length|0]);const a=alphaOf(smp,m);if(isFinite(a))bs.push(a)}
+ bs.sort((a,b)=>a-b);C.ci=bs.length>20?[bs[Math.floor(bs.length*.025)],bs[Math.floor(bs.length*.975)]]:null;
+ const R=S.names.length;C.M=[];const ks=[],ps=[];
+ for(let a=0;a<R;a++){C.M[a]=[];for(let b=0;b<R;b++){if(a===b){C.M[a][b]=null;continue}const r=cohen(a,b);C.M[a][b]=r;if(a<b){if(!isNaN(r.k))ks.push(r.k);if(!isNaN(r.po))ps.push(r.po)}}}
+ C.k=mean(ks);C.po=mean(ps);
+ const multi=S.items.filter(i=>i.v.filter(x=>x!==null).length>=2);
+ C.full=multi.filter(i=>new Set(i.v.filter(x=>x!==null)).size===1).length/(multi.length||1);C.multi=multi.length;
+ C.spec=cats.map(c=>{let a=0,b=0;S.items.forEach(it=>{for(let i=0;i<R;i++)for(let j=i+1;j<R;j++){const x=it.v[i],y=it.v[j];if(x===null||y===null)continue;if(x===c&&y===c)a++;else if(x===c||y===c)b++}});return{c,a,b,s:a+b?2*a/(2*a+b):NaN}});
+}
+function jIdx(){const v=$('jg').value;return v===''?-1:+v}
+function dist(vals){const c={};vals.forEach(v=>{if(v!==null)c[v]=(c[v]||0)+1});const n=Object.values(c).reduce((a,b)=>a+b,0)||1;
+ return`<div class="bar1">${C.cats.map((k,i)=>c[k]?`<div title="${esc(k)}: ${c[k]}" style="width:${c[k]/n*100}%;background:${col(i)}"></div>`:'').join('')}</div>`}
+const legend=()=>`<div class="lg">${C.cats.map((k,i)=>`<span><i style="background:${col(i)}"></i>${esc(k)}</span>`).join('')}</div>`;
+function judgeStats(J){
+ const hum=S.names.map((_,i)=>i).filter(i=>i!==J);
+ const mj=S.items.map(it=>({m:major(hum.map(i=>it.v[i])),j:it.v[J],it})).filter(x=>x.m!==null&&x.j!==null);
+ const po=mj.length?mj.filter(x=>x.m===x.j).length/mj.length:NaN;let pe=0;
+ C.cats.forEach(c=>pe+=(mj.filter(x=>x.m===c).length/mj.length)*(mj.filter(x=>x.j===c).length/mj.length));
+ const hk=[];for(let a=0;a<hum.length;a++)for(let b=a+1;b<hum.length;b++){const r=cohen(hum[a],hum[b]);if(!isNaN(r.k))hk.push(r.k)}
+ return{hum,mj,po,k:mj.length?(po-pe)/(1-pe):NaN,hk:mean(hk)};
+}
+const V={};
+V.data=()=>`<div class="card"><h2>Your labels</h2><p class="note" style="margin:0 0 8px">One row per item, one column per rater, rater names in the first row. Comma or tab separated. Blank, NA or "-" = missing. An optional first column named <code>item</code>, <code>id</code> or <code>text</code> labels the rows. Drop a CSV/TSV file onto the box or use Upload.</p>
+<textarea id="in" spellcheck="false">${esc(raw)}</textarea>
+<div class="row"><button class="p" id="go">Compute</button><button id="up">Upload file</button><button id="ex">Load example</button><button id="clr">Clear</button><input type="file" id="fi" accept=".csv,.tsv,.txt" hidden></div><p id="msg" class="note err"></p></div>`;
+V.overview=()=>{
+ const sp=C.spec.map(s=>`<tr><td class="l">${esc(s.c)}</td><td>${s.a}</td><td>${s.b}</td><td style="${heat(s.s)}">${pc(s.s)}</td></tr>`).join('');
+ return`<div class="card"><h2>Reliability</h2><div class="stats">
+<div class="st"><span>Krippendorff's α (${C.m})</span><b>${f(C.a)}</b><i>${C.ci?`95% CI ${f(C.ci[0])} to ${f(C.ci[1])}`:'CI unavailable'}</i><i>${C.a>=.8?'reliable':C.a>=.667?'tentative only':'unreliable'}</i></div>
+<div class="st"><span>Mean pairwise κ</span><b>${f(C.k)}</b><i>${lk(C.k)}</i></div>
+<div class="st"><span>Mean % agreement</span><b>${pc(C.po)}</b><i>not chance-corrected</i></div>
+<div class="st"><span>Items fully agreed</span><b>${pc(C.full)}</b><i>of ${C.multi} with 2+ labels</i></div>
+<div class="st"><span>Items × raters</span><b>${S.items.length} × ${S.names.length}</b></div></div>
+<p class="note">${esc(C.note)}α ≥ 0.80 is the usual bar; 0.667 to 0.80 allows tentative conclusions. The CI comes from 400 bootstrap resamples of items; with few items it will be wide. When one label dominates, κ and α drop even if raw agreement is high (the prevalence effect), so read them with the numbers below.</p></div>
+<div class="card"><h2>Label distribution per rater</h2>${S.names.map((n,i)=>`<div class="bl"><span>${esc(n)}</span>${dist(S.items.map(it=>it.v[i]))}</div>`).join('')}${legend()}
+<p class="note">A rater whose bar looks very different from the others is lenient or strict, which is a common cause of low κ.</p></div>
+<div class="card"><h2>Agreement per label</h2><div class="sc"><table><tr><th class="l">Label</th><th>Both chose it</th><th>Only one chose it</th><th>Specific agreement</th></tr>${sp}</table></div>
+<p class="note">Counted over every rater pair on every item. Specific agreement = 2a / (2a + b); it shows which labels raters can and cannot agree on.</p></div>`};
+V.raters=()=>{const R=S.names.length;
+ let h=`<div class="card"><h2>Pairwise Cohen's κ</h2><div class="sc"><table><tr><th></th>${S.names.map(n=>`<th>${esc(n)}</th>`).join('')}<th>Mean vs others</th></tr>`;
+ for(let a=0;a<R;a++){const ks=C.M[a].filter(r=>r&&!isNaN(r.k)).map(r=>r.k);h+=`<tr><th class="l">${esc(S.names[a])}</th>${C.M[a].map(r=>r?`<td style="${heat(r.k)}" title="n=${r.n}, ${pc(r.po)} agree">${f(r.k)}</td>`:'<td>—</td>').join('')}<td style="${heat(mean(ks))}"><b>${f(mean(ks))}</b></td></tr>`}
+ return h+`</table></div><p class="note">Hover a cell for item count and raw agreement. A rater whose mean is far below the rest is the one to retrain or review.</p></div>`};
+V.items=()=>`<div class="card"><h2>Items</h2><div class="row" style="margin:0 0 10px"><select id="fl"><option value="dis">Disagreements</option><option value="all">All items</option><option value="jd">Judge ≠ human majority</option><option value="miss">Has missing labels</option></select><input type="search" id="qs" placeholder="Search items" value="${esc(q)}"></div><div id="tb"></div></div>`;
+function itemsTable(){
+ const J=jIdx(),R=S.names.length;let rows=S.items.map(it=>{const vs=it.v.filter(x=>x!==null);return{it,u:new Set(vs).size,m:vs.length,mj:major(it.v)}});
+ if(flt==='dis')rows=rows.filter(r=>r.m>=2&&r.u>1);
+ if(flt==='miss')rows=rows.filter(r=>r.m<R);
+ if(flt==='jd'){if(J<0)return'<p class="note">Choose a judge in the header first.</p>';const hum=S.names.map((_,i)=>i).filter(i=>i!==J);rows=rows.filter(r=>{const m=major(hum.map(i=>r.it.v[i]));return m!==null&&r.it.v[J]!==null&&r.it.v[J]!==m})}
+ if(q)rows=rows.filter(r=>r.it.id.toLowerCase().includes(q.toLowerCase()));
+ rows.sort((a,b)=>b.u-a.u);
+ if(!rows.length)return'<p class="note">No matching items.</p>';
+ return`<div class="sc"><table><tr><th class="l">Item</th>${S.names.map((n,i)=>`<th>${esc(n)}${i===J?' ★':''}</th>`).join('')}<th>Distinct</th></tr>${rows.slice(0,300).map(r=>`<tr><td class="l" title="${esc(r.it.id)}">${esc(r.it.id.length>70?r.it.id.slice(0,70)+'…':r.it.id)}</td>${r.it.v.map((v,i)=>{const d=v!==null&&r.mj!==null&&v!==r.mj;return`<td class="${d?'dis':''} ${d&&i===J?'out':''}">${v===null?'·':esc(v)}</td>`}).join('')}<td>${r.u}</td></tr>`).join('')}</table></div><p class="note">${rows.length} item${rows.length>1?'s':''}${rows.length>300?' (first 300 shown)':''}. Shaded = differs from the majority label; outlined = the judge (★) differs.</p>`}
+V.judge=()=>{const J=jIdx();if(J<0)return`<div class="card"><h2>Judge check</h2><p class="note">Pick the LLM-judge column in the Judge menu at the top. The other columns are treated as humans.</p></div>`;
+ const s=judgeStats(J),cats=[...new Set(s.mj.flatMap(x=>[x.m,x.j]))].sort();
+ const verdict=isNaN(s.k)?'Not enough data.':s.k>=s.hk-.05&&s.k>=.6?'The judge agrees with the human majority about as well as humans agree with each other.':s.k<.4?'The judge tracks humans poorly. Do not rely on it yet.':'The judge is below human-level agreement. Review the disagreements before trusting it.';
+ let h=`<div class="card"><h2>${esc(S.names[J])} vs humans</h2><div class="stats">
+<div class="st"><span>κ vs human majority</span><b>${f(s.k)}</b><i>${lk(s.k)}</i></div>
+<div class="st"><span>% agree with majority</span><b>${pc(s.po)}</b><i>${s.mj.length} items with a clear majority</i></div>
+<div class="st"><span>Human–human mean κ</span><b>${f(s.hk)}</b><i>the ceiling to compare with</i></div></div>
+<p class="note"><b>${verdict}</b> Items where humans tie are left out of the majority figures.</p>
+<div class="sc" style="margin-top:12px"><table><tr><th class="l">Compared with</th><th>κ</th><th>Strength</th><th>% agree</th><th>n</th></tr>${s.hum.map(i=>{const r=cohen(J,i);return`<tr><td class="l">${esc(S.names[i])}</td><td style="${heat(r.k)}">${f(r.k)}</td><td>${lk(r.k)}</td><td>${pc(r.po)}</td><td>${r.n}</td></tr>`}).join('')}</table></div></div>`;
+ if(cats.length&&cats.length<=8)h+=`<div class="card"><h2>Where it goes wrong</h2><div class="sc"><table><tr><th class="l">Human majority ↓ / judge →</th>${cats.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${cats.map(r=>`<tr><th class="l">${esc(r)}</th>${cats.map(c=>{const n=s.mj.filter(x=>x.m===r&&x.j===c).length;return`<td class="${r!==c&&n?'dis':''}">${n}</td>`}).join('')}</tr>`).join('')}</table></div>
+<div class="bl" style="margin-top:12px"><span>Judge</span>${dist(S.items.map(i=>i.v[J]))}</div><div class="bl"><span>Human majority</span>${dist(S.items.map(i=>major(s.hum.map(h=>i.v[h]))))}</div>${legend()}
+<p class="note">Shaded off-diagonal cells are errors. If the judge's bar is shifted toward one label, it has a bias, such as being too lenient.</p></div>`;
+ return h};
+function nav(){$('nav').innerHTML=TABS.map(([k,l])=>`<button class="${tab===k?'on':''}" data-t="${k}">${l}</button>`).join('');
+ $('nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(b.dataset.t!=='data'&&!S){tab='data'}else tab=b.dataset.t;render()})}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1800)}
+function render(){
+ nav();$('m').innerHTML=V[tab]();
+ if(tab==='data'){
+  const ta=$('in');
+  $('go').onclick=()=>{raw=ta.value;load()};
+  $('ex').onclick=()=>{raw=EX;jset=false;load()};
+  $('clr').onclick=()=>{raw='';ta.value='';try{localStorage.removeItem('agr_raw')}catch(e){}};
+  $('up').onclick=()=>$('fi').click();
+  const rd=file=>{const r=new FileReader();r.onload=()=>{raw=String(r.result);jset=false;load()};r.readAsText(file)};
+  $('fi').onchange=e=>e.target.files[0]&&rd(e.target.files[0]);
+  ta.ondragover=e=>{e.preventDefault();ta.classList.add('drag')};ta.ondragleave=()=>ta.classList.remove('drag');
+  ta.ondrop=e=>{e.preventDefault();ta.classList.remove('drag');e.dataTransfer.files[0]&&rd(e.dataTransfer.files[0])};
+ }
+ if(tab==='items'){$('fl').value=flt;$('tb').innerHTML=itemsTable();
+  $('fl').onchange=e=>{flt=e.target.value;$('tb').innerHTML=itemsTable()};
+  $('qs').oninput=e=>{q=e.target.value;$('tb').innerHTML=itemsTable()}}
+}
+function load(){
+ try{S=parse(raw)}catch(e){S=null;render();$('msg')&&($('msg').textContent=e);return}
+ try{localStorage.setItem('agr_raw',raw)}catch(e){}
+ const cur=$('jg').value;
+ $('jg').innerHTML='<option value="">none</option>'+S.names.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');
+ let jv=cur!==''&&+cur<S.names.length?cur:'';
+ if(jv===''&&!jset){const g=S.names.findIndex(n=>/judge|llm|gpt|claude|model|^ai/i.test(n));if(g>=0)jv=String(g)}
+ $('jg').value=jv;compute();tab='overview';render();
+}
+$('jg').onchange=()=>{jset=true;if(S)render()};
+$('met').onchange=()=>{if(S){compute();render()}};
+$('th').onclick=()=>{const d=document.documentElement,dark=d.dataset.theme?d.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;d.dataset.theme=dark?'light':'dark'};
+$('cp').onclick=()=>{if(!S)return toast('Compute first');const J=jIdx();let t=`Items: ${S.items.length}, raters: ${S.names.length}\nKrippendorff alpha (${C.m}): ${f(C.a)}${C.ci?` (95% CI ${f(C.ci[0])} to ${f(C.ci[1])})`:''}\nMean pairwise kappa: ${f(C.k)}\nMean agreement: ${pc(C.po)}`;
+ if(J>=0){const s=judgeStats(J);t+=`\nJudge (${S.names[J]}) kappa vs human majority: ${f(s.k)}; human-human mean kappa: ${f(s.hk)}`}
+ try{navigator.clipboard.writeText(t).then(()=>toast('Summary copied'),()=>toast('Copy blocked by browser'))}catch(e){toast('Copy blocked by browser')}};
+load();tab='data';render();
+</script></body></html>

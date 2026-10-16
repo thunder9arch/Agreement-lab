@@ -1,0 +1,9 @@
+item	human_A	human_B	human_C	llm_judge
+Reply is polite and accurate	good	good	good	good
+Misses the second question	good	bad	good	good
+Invents a citation	bad	bad	bad	good
+Refuses a harmless request	bad	bad	bad	bad
+Correct but rambling	good	good	bad	good
+Partly answers, hedges a lot	unsure	bad	unsure	bad
+Clear step-by-step fix	good	good	good	good
+Wrong date given	bad	good	bad	bad
